@@ -1,0 +1,410 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'topic_model.dart';
+
+class TopicService {
+  final CollectionReference topicsCollection =
+      FirebaseFirestore.instance.collection('topics');
+
+  Future<void> generateAndUploadTopics() async {
+    final List<Map<String, dynamic>> theTopics = [
+      // Technology-based topics
+      {
+        'name': 'Artificial Intelligence',
+        'icon': Icons.smart_toy,
+        'color': Colors.blue,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Cybersecurity',
+        'icon': Icons.security,
+        'color': Colors.red,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Cloud Computing',
+        'icon': Icons.cloud,
+        'color': Colors.lightBlue,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Blockchain',
+        'icon': Icons.link,
+        'color': Colors.green,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Crypto',
+        'icon': Icons.currency_bitcoin,
+        'color': Colors.orange,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Data Science',
+        'icon': Icons.bar_chart,
+        'color': Colors.purple,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Internet of Things',
+        'icon': Icons.devices_other,
+        'color': Colors.teal,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Robotics',
+        'icon': Icons.precision_manufacturing,
+        'color': Colors.blueGrey,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Web Development',
+        'icon': Icons.web,
+        'color': Colors.indigo,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Mobile Development',
+        'icon': Icons.phone_android,
+        'color': Colors.green,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Machine Learning',
+        'icon': Icons.memory,
+        'color': Colors.blueAccent,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Programming',
+        'icon': Icons.code,
+        'color': Colors.deepPurple,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Quantum Computing',
+        'icon': Icons.science,
+        'color': Colors.cyan,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Virtual Reality',
+        'icon': Icons.vrpano,
+        'color': Colors.deepOrange,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Augmented Reality',
+        'icon': Icons.view_in_ar,
+        'color': Colors.amber,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Gaming',
+        'icon': Icons.sports_esports,
+        'color': Colors.pink,
+        'field': 'Technology',
+      },
+      {
+        'name': 'DevOps',
+        'icon': Icons.engineering,
+        'color': Colors.blue,
+        'field': 'Technology',
+      },
+      {
+        'name': 'UI/UX Design',
+        'icon': Icons.design_services,
+        'color': Colors.orangeAccent,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Software Engineering',
+        'icon': Icons.developer_mode,
+        'color': Colors.brown,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Networking',
+        'icon': Icons.network_check,
+        'color': Colors.teal,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Big Data',
+        'icon': Icons.storage,
+        'color': Colors.blueGrey,
+        'field': 'Technology',
+      },
+      {
+        'name': '5G',
+        'icon': Icons.signal_cellular_alt,
+        'color': Colors.lightGreen,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Automation',
+        'icon': Icons.build,
+        'color': Colors.orange,
+        'field': 'Technology',
+      },
+      {
+        'name': 'Cloud Architecture',
+        'icon': Icons.cloud_queue,
+        'color': Colors.lightBlue,
+        'field': 'Technology',
+      },
+      {
+        'name': 'FinTech',
+        'icon': Icons.monetization_on,
+        'color': Colors.greenAccent,
+        'field': 'Technology',
+      },
+
+      // Science-related topics
+      {
+        'name': 'Physics',
+        'icon': Icons.science,
+        'color': Colors.blueGrey,
+        'field': 'Science',
+      },
+      {
+        'name': 'Chemistry',
+        'icon': Icons.smoke_free,
+        'color': Colors.deepOrange,
+        'field': 'Science',
+      },
+      {
+        'name': 'Biology',
+        'icon': Icons.biotech,
+        'color': Colors.green,
+        'field': 'Science',
+      },
+      {
+        'name': 'Astronomy',
+        'icon': Icons.space_dashboard,
+        'color': Colors.indigo,
+        'field': 'Science',
+      },
+      {
+        'name': 'Mathematics',
+        'icon': Icons.calculate,
+        'color': Colors.deepPurple,
+        'field': 'Science',
+      },
+      {
+        'name': 'Environmental Science',
+        'icon': Icons.eco,
+        'color': Colors.lightGreen,
+        'field': 'Science',
+      },
+      {
+        'name': 'Genetics',
+        'icon': Icons.grass,
+        'color': Colors.purple,
+        'field': 'Science',
+      },
+      {
+        'name': 'Nanotechnology',
+        'icon': Ionicons.ios_nuclear,
+        'color': Colors.teal,
+        'field': 'Science',
+      },
+      {
+        'name': 'Quantum Physics',
+        'icon': Icons.science,
+        'color': Colors.cyan,
+        'field': 'Science',
+      },
+      {
+        'name': 'Astrophysics',
+        'icon': Icons.rocket_launch,
+        'color': Colors.lightBlue,
+        'field': 'Science',
+      },
+      {
+        'name': 'Biotechnology',
+        'icon': Icons.biotech,
+        'color': Colors.greenAccent,
+        'field': 'Science',
+      },
+
+      // Arts and social sciences topics
+      {
+        'name': 'Philosophy',
+        'icon': Icons.book,
+        'color': Colors.brown,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'History',
+        'icon': Icons.history,
+        'color': Colors.grey,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Psychology',
+        'icon': Icons.psychology,
+        'color': Colors.yellow,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Sociology',
+        'icon': Icons.people,
+        'color': Colors.purpleAccent,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Political Science',
+        'icon': Icons.gavel,
+        'color': Colors.red,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Economics',
+        'icon': Icons.attach_money,
+        'color': Colors.green,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Linguistics',
+        'icon': Icons.language,
+        'color': Colors.deepOrangeAccent,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Anthropology',
+        'icon': Icons.group,
+        'color': Colors.brown,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Archaeology',
+        'icon': Icons.architecture,
+        'color': Colors.amber,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Music Theory',
+        'icon': Icons.music_note,
+        'color': Colors.purple,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Visual Arts',
+        'icon': Icons.palette,
+        'color': Colors.pinkAccent,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Performing Arts',
+        'icon': Icons.theater_comedy,
+        'color': Colors.redAccent,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Literature',
+        'icon': Icons.menu_book,
+        'color': Colors.deepPurple,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Creative Writing',
+        'icon': Icons.edit,
+        'color': Colors.blueGrey,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Film Studies',
+        'icon': Icons.movie,
+        'color': Colors.indigo,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Theater',
+        'icon': Icons.theater_comedy,
+        'color': Colors.orangeAccent,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Photography',
+        'icon': Icons.camera_alt,
+        'color': Colors.blue,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Fashion Design',
+        'icon': Icons.style,
+        'color': Colors.pinkAccent,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Graphic Design',
+        'icon': Icons.design_services,
+        'color': Colors.blueAccent,
+        'field': 'Arts & Social Sciences',
+      },
+      {
+        'name': 'Architecture',
+        'icon': Icons.apartment,
+        'color': Colors.blueGrey,
+        'field': 'Arts & Social Sciences',
+      },
+    ];
+
+    List<Map<String, dynamic>> topics = [];
+
+    for (int i = 0; i < theTopics.length; i++) {
+      String category = theTopics[i]['name'];
+      String subtopic = 'Discussion on ${category.toLowerCase()}';
+      String icon = theTopics[i]['icon'].codePoint.toString();
+      String color = theTopics[i]['color'].value.toRadixString(16);
+      String field = theTopics[i]['field'];
+
+      topics.add({
+        'id': DateTime.now().millisecondsSinceEpoch.toString() + i.toString(),
+        'name': category,
+        'icon': icon,
+        'color': color,
+        'field': field,
+        'description': subtopic,
+      });
+    }
+
+    // Upload all topics to Firebase
+    try {
+      for (var topic in topics) {
+        await topicsCollection.doc(topic['id']).set(topic);
+        print('Uploaded topic: ${topic['name']}');
+      }
+      print('All topics uploaded successfully.');
+    } catch (e) {
+      print('Failed to upload topics: $e');
+      rethrow;
+    }
+  }
+
+  // Create a new topic
+  Future<void> createTopic(TopicModel topic) async {
+    try {
+      await topicsCollection.doc(topic.id).set(topic.toMap());
+      print('Topic created successfully');
+    } catch (e) {
+      print('Failed to create topic: $e');
+      rethrow;
+    }
+  }
+
+  // Retrieve all topics
+  Future<List<TopicModel>> getTopics() async {
+    try {
+      QuerySnapshot snapshot = await topicsCollection.get();
+      return snapshot.docs.map((doc) {
+        return TopicModel.fromMap(doc.data() as Map<String, dynamic>);
+      }).toList();
+    } catch (e) {
+      print('Failed to retrieve topics: $e');
+      rethrow;
+    }
+  }
+}
