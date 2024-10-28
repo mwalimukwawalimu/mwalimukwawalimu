@@ -1,0 +1,164 @@
+import 'package:flutter/material.dart';
+
+import 'database.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:google_sign_in/google_sign_in.dart';
+
+class CustomUser {
+  final String uid;
+  final String fullName;
+  final String username; // e.g., @hasan_bashar230
+  final String email;
+  final String bio; // Short bio for the profile
+  final String location; // Location of the user
+  final DateTime joinedDate; // When the user joined the platform
+  final String profilePictureUrl; // URL for the profile picture
+  late String password; // Password (hashed in a real system)
+  late int score;
+
+  // Statistics
+  final int questionsCount; // Number of questions asked
+  final int answersCount; // Number of answers provided
+  final int
+      contributionsCount; // Contributions made (answers + other activities)
+  final List<String> followedTopics;
+  CustomUser({
+    required this.uid,
+    required this.fullName,
+    required this.username,
+    required this.email,
+    required this.bio,
+    required this.location,
+    required this.joinedDate,
+    required this.profilePictureUrl,
+    this.questionsCount = 0,
+    this.answersCount = 0,
+    this.contributionsCount = 0,
+    this.score = 0,
+    this.followedTopics =
+        const [], // Default to empty list if no topics are followed
+  });
+
+  String getEmail() {
+    return email;
+  }
+}
+
+class AuthService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  Future<void> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      print('Error sending password reset email: $e');
+      // Handle error here, e.g., show error message to user
+    }
+  }
+
+  CustomUser? userFromFirebaseUser(User? user) {
+    if (user == null) return null;
+    return CustomUser(
+      uid: user.uid,
+      email: user.email ?? '', // Handle null email gracefully
+      fullName:
+          user.displayName ?? 'Anonymous', // Default full name if not provided
+      username:
+          '@${user.email?.split('@')[0] ?? 'user'}', // Generate a username based on email, or default
+      bio: 'This user has not set a bio.', // Default bio
+      location: 'Unknown', // Default location
+      joinedDate: DateTime.now(), // Use current date for joinedDate
+      profilePictureUrl: user.photoURL ??
+          'https://example.com/default_profile_picture.png', // Default picture
+      questionsCount: 0, // Default statistics
+      answersCount: 0,
+      contributionsCount: 0,
+      followedTopics: [], // Default empty topics list
+    );
+  }
+
+  // Create a stream of CustomUser
+  Stream<CustomUser?> get userStream {
+    return _auth.authStateChanges().map((User? user) {
+      return user != null ? userFromFirebaseUser(user) : null;
+    });
+  }
+
+  Future<CustomUser?> getCurrentUser() async {
+    User? user = _auth.currentUser;
+    return userFromFirebaseUser(user);
+  }
+
+  Future<CustomUser?> registerWithEmailAndPassword(
+    BuildContext context,
+    String uid,
+    String fullName,
+    String username,
+    String email,
+    String bio,
+    String location,
+    DateTime joinedDate, // fixed type
+    String profilePictureUrl,
+    String password,
+  ) async {
+    try {
+      UserCredential result = await _auth.createUserWithEmailAndPassword(
+          email: email, password: password);
+      User? user = result.user;
+
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Verification email sent to $email')),
+        );
+      }
+
+      await DatabaseService(uid: user!.uid).updateUserData(fullName, username,
+          email, bio, location, joinedDate, profilePictureUrl);
+
+      return userFromFirebaseUser(user);
+    } catch (e) {
+      print("Failed to create account.");
+      return null;
+    }
+  }
+
+  Future<bool> isEmailVerified() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    await user?.reload(); // Refresh the user's status
+    return user?.emailVerified ?? false;
+  }
+
+  Future signIn(String email, String password) async {
+    try {
+      UserCredential result = await _auth.signInWithEmailAndPassword(
+          email: email, password: password);
+      User? user = result.user;
+      return userFromFirebaseUser(user);
+    } catch (e) {
+      print(e.toString());
+      print("Failed to sign in");
+      return null;
+    }
+  }
+
+  Future signInAnon() async {
+    try {
+      UserCredential result = await _auth.signInAnonymously();
+      User? user = result.user;
+      return userFromFirebaseUser(user);
+    } catch (e) {
+      print(e.toString());
+      return null;
+    }
+  }
+
+  Future signOut() async {
+    try {
+      return await _auth.signOut();
+    } catch (e) {
+      print(e.toString());
+      return null;
+    }
+  }
+}
