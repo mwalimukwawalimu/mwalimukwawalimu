@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "277044864191",
+    "project_id": "mwalimu-kwa-walimu",
+    "storage_bucket": "mwalimu-kwa-walimu.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:277044864191:android:a2bbdf35ef085b3c96d20a",
+        "android_client_info": {
+          "package_name": "com.example.mwalimukwawalimu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB89YpLrTN9Y2j5f3OTb7IfrTSHVcr8lhA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
