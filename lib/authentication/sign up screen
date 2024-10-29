@@ -4,7 +4,6 @@ import 'package:mwalimukwawalimu/models/user_models.dart';
 import 'package:mwalimukwawalimu/topics/topic_selections.dart';
 
 // Make sure this contains the AuthService
-// import 'package:edvolutionhub/services/database_service.dart'; // Assuming DatabaseService is implemented
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
