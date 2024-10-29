@@ -1,0 +1,203 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'user_models.dart';
+import 'dart:math';
+
+DateTime getRandomDate(DateTime start, DateTime end) {
+  final Random random = Random();
+  int difference = end.difference(start).inDays;
+  int randomDays = random.nextInt(difference + 1);
+  return start.add(Duration(days: randomDays));
+}
+
+class DatabaseService {
+  final String uid;
+
+  DatabaseService({required this.uid});
+
+  // Collection reference
+  final CollectionReference users =
+      FirebaseFirestore.instance.collection('users');
+
+  Future<void> updateUserInterests(List<String> followedTopics) async {
+    try {
+      await users.doc(uid).update({'followedTopics': followedTopics});
+      print("Interests updated successfully.");
+    } catch (e) {
+      print("Error updating interests: $e");
+    }
+  }
+
+  // Function to count questions and answers for a specific user
+  Future<Map<String, int>> countUserQuestionsAndAnswers(String userId) async {
+    try {
+      // Count Questions
+      QuerySnapshot questionsSnapshot = await FirebaseFirestore.instance
+          .collection(
+              'questions') // Replace with your questions collection name
+          .where('authorId',
+              isEqualTo: userId) // Replace 'userId' with your field name
+          .get();
+
+      int questionCount = questionsSnapshot.docs.length;
+
+      // Count Answers
+      int answerCount = 0;
+
+      // Count Answers for each question
+      for (var questionDoc in questionsSnapshot.docs) {
+        // Get the answers sub-collection for the current question
+        QuerySnapshot answersSnapshot = await questionDoc.reference
+            .collection('answers')
+            .where('userID', isEqualTo: userId) // Check the specific field
+            .get();
+        answerCount += answersSnapshot.docs.length; // Add the count of answers
+      }
+
+      // Return the counts
+      return {
+        'questionsCount': questionCount,
+        'answersCount': answerCount,
+      };
+    } catch (e) {
+      print('Error fetching user data: $e');
+      return {
+        'questionsCount': 0,
+        'answersCount': 0,
+      }; // Return 0 if there's an error
+    }
+  }
+
+  Future<void> updateUserData(
+      String fullName,
+      String username,
+      String email,
+      String bio,
+      String location,
+      DateTime joinedDate,
+      String profilePictureUrl) async {
+    return await users.doc(uid).update({
+      'fullName': fullName,
+      'username': username,
+      'email': email,
+      'bio': bio,
+      'location': location,
+      'joinedDate': Timestamp.fromDate(joinedDate)
+          .toString(), // Store as Firestore timestamp
+      'profilePictureUrl': profilePictureUrl,
+      'followedTopics': [],
+    });
+  }
+
+  Future<void> updateUserFCMToken(String? fcmToken) async {
+    return await users.doc(uid).update({'fcmToken': fcmToken});
+  }
+
+  Future<String> getUserFCMToken(String userId) async {
+    try {
+      final docSnapshot = await users.doc(userId).get();
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data()! as Map<String, dynamic>;
+        return data['fcmToken'] ?? '';
+      } else {
+        print("No user found with uid: $userId");
+        return ''; // Or return a default user object
+      }
+    } catch (e) {
+      print("Error fetching user data: $e");
+      // Handle other potential errors
+      return ''; // Or return a default user object
+    }
+  }
+
+  // user from uid
+  Future<CustomUser?> userFromUid() async {
+    try {
+      final docSnapshot = await users.doc(uid).get();
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data()! as Map<String, dynamic>;
+        return CustomUser(
+            uid: uid,
+            fullName: data['fullName'] ?? '',
+            username: data['username'] ?? '',
+            email: data['email'] ?? '',
+            bio: data['bio'] ?? '',
+            followedTopics: data['followedTopics'] ?? [],
+            location: data['location'] ?? '',
+            joinedDate: DateTime.tryParse(data['joinedDate']) ?? DateTime.now(),
+            profilePictureUrl: data['profilePictureUrl'] ?? '');
+      } else {
+        print("No user found with uid: $uid");
+        return null; // Or return a default user object
+      }
+    } catch (e) {
+      print("Error fetching user data: $e");
+      // Handle other potential errors
+      return null; // Or return a default user object
+    }
+  }
+  
+  // Method to get all questions
+  Future<List<Map<String, dynamic>>> getQuestionsByUser(String userId) async {
+    try {
+      // Query the questions collection where the userId matches the provided userId
+      QuerySnapshot questionsSnapshot = await FirebaseFirestore.instance
+          .collection(
+              'questions') // Replace with your questions collection name
+          .where('authorId',
+              isEqualTo: userId) // Replace 'userId' with your field name
+          .get();
+
+      // Convert the query snapshot to a list of QuestionModel objects
+      final List<Map<String, dynamic>> fetchedQuestions =
+          questionsSnapshot.docs.map((doc) {
+        Timestamp timestamp = doc['createdAt'];
+        DateTime dateTime = timestamp.toDate().toUtc();
+
+        return {
+          'id': doc.id,
+          'questionText': doc['questionText'],
+          'author': doc['authorId'] ?? 'Anonymous',
+          'authorId': doc['authorId'] ?? 'Anonymous',
+          'topicId': doc['topicId'],
+          'createdAt': dateTime.toIso8601String().split('T').first,
+        };
+      }).toList();
+
+      return fetchedQuestions; // Return the list of questions
+    } catch (e) {
+      print("i got an error.");
+      print('Error fetching questions: $e');
+      return []; // Return an empty list if there's an error
+    }
+  }
+
+  // Method to get all users
+  Future<List<CustomUser>> getAllUsers() async {
+    List<CustomUser> userList = [];
+    try {
+      QuerySnapshot snapshot = await users.get();
+      for (var doc in snapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>;
+        userList.add(CustomUser(
+          uid: doc.id,
+          score: data['score'] ?? 0,
+          fullName: data['fullName'] ?? '',
+          username: data['username'] ?? '',
+          email: data['email'] ?? '',
+          bio: data['bio'] ?? '',
+          location: data['location'] ?? '',
+          joinedDate: getRandomDate(DateTime(2024, 1, 1), DateTime(2030, 1, 1)),
+          profilePictureUrl: data['profilePictureUrl'] ?? '',
+          questionsCount: data['questionsCount'] ?? 0,
+          answersCount: data['answersCount'] ?? 0,
+          contributionsCount: data['contributionsCount'] ?? 0,
+          followedTopics: List<String>.from(data['followedTopics'] ?? []),
+        ));
+        userList.sort((a, b) => b.score.compareTo(a.score));
+      }
+    } catch (e) {
+      print('Error fetching users: $e');
+    }
+    return userList;
+  }
+}
