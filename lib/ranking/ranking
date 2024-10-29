@@ -1,1 +1,11 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:mwalimukwawalimu/models/database.dart';
+import 'package:mwalimukwawalimu/models/user_models.dart';
 
+class LeaderboardScreen extends StatefulWidget {
+  const LeaderboardScreen({super.key});
+
+  @override
+  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
+}
