@@ -1,0 +1,315 @@
+import 'package:flutter/material.dart';
+import 'package:mwalimukwawalimu/laypoint.dart';
+import 'package:mwalimukwawalimu/models/user_models.dart';
+import 'package:mwalimukwawalimu/topics/topic_selections.dart';
+
+// Make sure this contains the AuthService
+// import 'package:edvolutionhub/services/database_service.dart'; // Assuming DatabaseService is implemented
+
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  _SignUpScreenState createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  // Controllers to capture input fields
+  final TextEditingController _fullNameController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  // Add an AuthService instance
+  final AuthService _auth = AuthService();
+
+  bool termsAccepted = false;
+
+  // Sign-up logic
+  Future<void> _register() async {
+    if (!termsAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Please accept the terms and conditions.")),
+      );
+      return;
+    }
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Passwords do not match.")),
+      );
+      return;
+    }
+
+    // Capture input values
+    String fullName = _fullNameController.text.trim();
+    String username = _usernameController.text.trim();
+    String email = _emailController.text.trim();
+    String password = _passwordController.text.trim();
+    DateTime joinedDate = DateTime.now(); // You can pass the current date
+    String bio =
+        "Bio not set"; // Placeholder, update based on actual input if needed
+    String location = "Location not set"; // Placeholder
+    String profilePictureUrl =
+        "default_url"; // Placeholder, or link to a default profile picture
+
+    // Call register method
+    dynamic result = await _auth.registerWithEmailAndPassword(
+      context,
+      email,
+      fullName,
+      username,
+      email,
+      bio,
+      location,
+      joinedDate,
+      profilePictureUrl,
+      password,
+    );
+
+    dynamic result_2 = await _auth.signIn(email, password);
+
+    if (result == null || result_2 == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to create account.")),
+      );
+    } else {
+      // Navigate to main screen on successful registration
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => const InterestsSelectionPage()));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Gradient Background
+          Flexible(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF512DA8), Color(0xFF673AB7)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
+          // Sign-up Card
+          Align(
+            alignment: Alignment.center,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                padding: const EdgeInsets.all(24.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Logo (Icon at the top)
+                    const CircleAvatar(
+                      backgroundColor: Colors.blueAccent,
+                      radius: 32,
+                      child: Text(
+                        "S",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    // Title
+                    const Text(
+                      "Create Your Account.",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Subtitle
+                    const Text(
+                      "Get started with your free account.",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 20),
+                    // Full Name Input
+                    TextField(
+                      controller: _fullNameController,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.person_outline),
+                        hintText: "Full Name",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    // Username Input
+                    TextField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.person_outline),
+                        hintText: "Username",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    // Email Input
+                    TextField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        hintText: "Email Address",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    // Password Input
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        hintText: "Password",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        suffixIcon: const Icon(Icons.visibility_off_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    // Confirm Password Input
+                    TextField(
+                      controller: _confirmPasswordController,
+                      obscureText: true,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        hintText: "Confirm Password",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        suffixIcon: const Icon(Icons.visibility_off_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Terms & Conditions Checkbox
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: termsAccepted,
+                          onChanged: (value) {
+                            setState(() {
+                              termsAccepted = value ?? false;
+                            });
+                          },
+                          activeColor: Colors.purple,
+                        ),
+                        const Expanded(
+                          child: Text("I agree to the terms and conditions."),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Sign Up Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _register, // Call the registration function
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.purple,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          "Sign Up",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Already Have an Account? Sign In
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Already have an account? "),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MainScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            "Sign In",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    // Google Sign Up Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        icon: Image.asset(
+                          'assets/images/google (2).png',
+                          width: 20,
+                        ),
+                        onPressed: () {
+                          // Handle Google Sign Up
+                        },
+                        label: const Text("Sign Up With Google"),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.grey),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
