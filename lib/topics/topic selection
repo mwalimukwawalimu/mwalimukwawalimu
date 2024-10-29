@@ -1,0 +1,311 @@
+import 'package:flutter/material.dart';
+
+class InterestSelectionScreen extends StatefulWidget {
+  const InterestSelectionScreen({super.key});
+
+  @override
+  _InterestSelectionScreenState createState() => _InterestSelectionScreenState();
+}
+
+class _InterestSelectionScreenState extends State<InterestSelectionScreen> {
+  // List of interests
+final List<String> interests = [
+  // Technology-based topics
+  'Artificial Intelligence', 'Cybersecurity', 'Cloud Computing', 'Blockchain', 'Crypto', 
+  'Data Science', 'Internet of Things', 'Robotics', 'Web Development', 'Mobile Development', 
+  'Machine Learning', 'Programming', 'Quantum Computing', 'Virtual Reality', 'Augmented Reality', 
+  'Gaming', 'DevOps', 'UI/UX Design', 'Software Engineering', 'Networking', 'Big Data', '5G', 
+  'Automation', 'Cloud Architecture', 'FinTech',
+
+  // Science-related topics
+  'Physics', 'Chemistry', 'Biology', 'Astronomy', 'Mathematics', 'Environmental Science', 
+  'Genetics', 'Nanotechnology', 'Quantum Physics', 'Astrophysics', 'Biotechnology', 'Geology',
+  'Oceanography', 'Ecology', 'Neuroscience', 'Biomedical Engineering', 'Space Science', 
+  'Artificial Life',
+
+  // Arts and Social Sciences
+  'Philosophy', 'History', 'Psychology', 'Sociology', 'Political Science', 'Economics', 
+  'Linguistics', 'Anthropology', 'Archaeology', 'Music Theory', 'Visual Arts', 'Performing Arts', 
+  'Literature', 'Creative Writing', 'Film Studies', 'Theater', 'Photography', 'Fashion Design', 
+  'Graphic Design', 'Architecture',
+
+  // Miscellaneous Educational Topics
+  'Education Technology', 'Early Childhood Education', 'Higher Education', 'Distance Learning', 
+  'E-Learning', 'Cultural Studies', 'Public Policy', 'International Relations', 'Social Work', 
+  'Law', 'Ethics', 'Journalism', 'Communication Studies', 'Religious Studies'
+];
+
+
+  // This map will keep track of selected interests
+  Map<String, bool> selectedInterests = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the map with all interests unselected
+    for (var interest in interests) {
+      selectedInterests[interest] = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Select Interests'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            // Handle back button action
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: ListView(
+          // crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title Section
+            const SizedBox(height: 20),
+            const Text(
+              "Let’s select your interests.",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 5),
+            const Text(
+              "Please select two or more to proceed.",
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+
+            // Interest Chips Section
+            Expanded(
+              child: Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: interests.map((interest) {
+                  return ChoiceChip(
+                    label: Text(interest),
+                    selected: selectedInterests[interest]!,
+                    selectedColor: Colors.blue[100],
+                    onSelected: (bool selected) {
+                      setState(() {
+                        selectedInterests[interest] = selected;
+                      });
+                    },
+                    avatar: _getInterestIcon(interest),
+                    labelStyle: TextStyle(
+                      color: selectedInterests[interest]! ? Colors.blue : Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            
+            // Continue Button
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _canProceed()
+                      ? () {
+                          // Handle continue action
+                          print('Selected interests: ${_getSelectedInterests()}');
+                        }
+                      : null, // Disable if fewer than 2 interests are selected
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Continue',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper method to check if the user can proceed (at least 2 interests selected)
+  bool _canProceed() {
+    int selectedCount = selectedInterests.values.where((isSelected) => isSelected).length;
+    return selectedCount >= 2;
+  }
+
+  // Helper method to get selected interests
+  List<String> _getSelectedInterests() {
+    return selectedInterests.entries
+        .where((entry) => entry.value == true)
+        .map((entry) => entry.key)
+        .toList();
+  }// Helper method to get icons for each interest
+Widget? _getInterestIcon(String interest) {
+  switch (interest) {
+    // Technology-based topics
+    case 'Artificial Intelligence':
+      return const Icon(Icons.smart_toy, color: Colors.blue);
+    case 'Cybersecurity':
+      return const Icon(Icons.security, color: Colors.red);
+    case 'Cloud Computing':
+      return const Icon(Icons.cloud, color: Colors.lightBlue);
+    case 'Blockchain':
+      return const Icon(Icons.link, color: Colors.green);
+    case 'Crypto':
+      return const Icon(Icons.currency_bitcoin, color: Colors.orange);
+    case 'Data Science':
+      return const Icon(Icons.bar_chart, color: Colors.purple);
+    case 'Internet of Things':
+      return const Icon(Icons.devices_other, color: Colors.teal);
+    case 'Robotics':
+      return const Icon(Icons.precision_manufacturing, color: Colors.blueGrey);
+    case 'Web Development':
+      return const Icon(Icons.web, color: Colors.indigo);
+    case 'Mobile Development':
+      return const Icon(Icons.phone_android, color: Colors.green);
+    case 'Machine Learning':
+      return const Icon(Icons.memory, color: Colors.blueAccent);
+    case 'Programming':
+      return const Icon(Icons.code, color: Colors.deepPurple);
+    case 'Quantum Computing':
+      return const Icon(Icons.science, color: Colors.cyan);
+    case 'Virtual Reality':
+      return const Icon(Icons.vrpano, color: Colors.deepOrange);
+    case 'Augmented Reality':
+      return const Icon(Icons.view_in_ar, color: Colors.amber);
+    case 'Gaming':
+      return const Icon(Icons.sports_esports, color: Colors.pink);
+    case 'DevOps':
+      return const Icon(Icons.engineering, color: Colors.blue);
+    case 'UI/UX Design':
+      return const Icon(Icons.design_services, color: Colors.orangeAccent);
+    case 'Software Engineering':
+      return const Icon(Icons.developer_mode, color: Colors.brown);
+    case 'Networking':
+      return const Icon(Icons.network_check, color: Colors.teal);
+    case 'Big Data':
+      return const Icon(Icons.storage, color: Colors.blueGrey);
+    case '5G':
+      return const Icon(Icons.signal_cellular_alt, color: Colors.lightGreen);
+    case 'Automation':
+      return const Icon(Icons.build, color: Colors.orange);
+    case 'Cloud Architecture':
+      return const Icon(Icons.cloud_queue, color: Colors.lightBlue);
+    case 'FinTech':
+      return const Icon(Icons.monetization_on, color: Colors.greenAccent);
+
+    // Science-related topics
+    case 'Physics':
+      return const Icon(Icons.science, color: Colors.blueGrey);
+    case 'Chemistry':
+      return const Icon(Icons.science, color: Colors.deepOrange); // No dedicated chemical icon
+    case 'Biology':
+      return const Icon(Icons.biotech, color: Colors.green);
+    case 'Astronomy':
+      return const Icon(Icons.space_dashboard, color: Colors.indigo);
+    case 'Mathematics':
+      return const Icon(Icons.calculate, color: Colors.deepPurple);
+    case 'Environmental Science':
+      return const Icon(Icons.eco, color: Colors.lightGreen);
+    case 'Genetics':
+      return const Icon(Icons.grass, color: Colors.purple);
+    case 'Nanotechnology':
+      return const Icon(Icons.science_outlined, color: Colors.teal); // Closest match for nanotech
+    case 'Quantum Physics':
+      return const Icon(Icons.science, color: Colors.cyan);
+    case 'Astrophysics':
+      return const Icon(Icons.rocket_launch, color: Colors.lightBlue);
+    case 'Biotechnology':
+      return const Icon(Icons.biotech, color: Colors.greenAccent);
+
+    // Arts and Social Sciences topics
+    case 'Philosophy':
+      return const Icon(Icons.book, color: Colors.brown);
+    case 'History':
+      return const Icon(Icons.history, color: Colors.grey);
+    case 'Psychology':
+      return const Icon(Icons.psychology, color: Colors.yellow);
+    case 'Sociology':
+      return const Icon(Icons.people, color: Colors.purpleAccent);
+    case 'Political Science':
+      return const Icon(Icons.gavel, color: Colors.red);
+    case 'Economics':
+      return const Icon(Icons.attach_money, color: Colors.green);
+    case 'Linguistics':
+      return const Icon(Icons.language, color: Colors.deepOrangeAccent);
+    case 'Anthropology':
+      return const Icon(Icons.group, color: Colors.brown);
+    case 'Archaeology':
+      return const Icon(Icons.architecture, color: Colors.amber);
+    case 'Music Theory':
+      return const Icon(Icons.music_note, color: Colors.purple);
+    case 'Visual Arts':
+      return const Icon(Icons.palette, color: Colors.pinkAccent);
+    case 'Performing Arts':
+      return const Icon(Icons.theater_comedy, color: Colors.redAccent);
+    case 'Literature':
+      return const Icon(Icons.menu_book, color: Colors.deepPurple);
+    case 'Creative Writing':
+      return const Icon(Icons.edit, color: Colors.blueGrey);
+    case 'Film Studies':
+      return const Icon(Icons.movie, color: Colors.indigo);
+    case 'Theater':
+      return const Icon(Icons.theater_comedy, color: Colors.orangeAccent);
+    case 'Photography':
+      return const Icon(Icons.camera_alt, color: Colors.blue);
+    case 'Fashion Design':
+      return const Icon(Icons.style, color: Colors.pinkAccent);
+    case 'Graphic Design':
+      return const Icon(Icons.design_services, color: Colors.blueAccent);
+    case 'Architecture':
+      return const Icon(Icons.apartment, color: Colors.blueGrey);
+
+    // Educational topics
+    case 'Education Technology':
+      return const Icon(Icons.computer, color: Colors.blue);
+    case 'Early Childhood Education':
+      return const Icon(Icons.child_friendly, color: Colors.lightBlue);
+    case 'Higher Education':
+      return const Icon(Icons.school, color: Colors.brown);
+    case 'Distance Learning':
+      return const Icon(Icons.wifi, color: Colors.green);
+    case 'E-Learning':
+      return const Icon(Icons.cast_for_education, color: Colors.orange);
+    case 'Cultural Studies':
+      return const Icon(Icons.language, color: Colors.deepOrangeAccent);
+    case 'Public Policy':
+      return const Icon(Icons.policy, color: Colors.teal);
+    case 'International Relations':
+      return const Icon(Icons.public, color: Colors.blue);
+    case 'Social Work':
+      return const Icon(Icons.volunteer_activism, color: Colors.red);
+    case 'Law':
+      return const Icon(Icons.balance, color: Colors.brown);
+    case 'Ethics':
+      return const Icon(Icons.psychology, color: Colors.deepPurple);
+    case 'Journalism':
+      return const Icon(Icons.newspaper, color: Colors.blue);
+    case 'Communication Studies':
+      return const Icon(Icons.message, color: Colors.green);
+    case 'Religious Studies':
+      return const Icon(Icons.self_improvement, color: Colors.yellow);
+
+    default:
+      return null; // No icon for unknown interests
+  }
+}
+}
