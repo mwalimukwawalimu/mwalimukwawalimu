@@ -9,3 +9,12 @@ class LeaderboardScreen extends StatefulWidget {
   @override
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
 }
+class _LeaderboardScreenState extends State<LeaderboardScreen> {
+  late Future<List<CustomUser>> _usersFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _usersFuture = DatabaseService(uid: FirebaseAuth.instance.currentUser!.uid)
+        .getAllUsers();
+  }
