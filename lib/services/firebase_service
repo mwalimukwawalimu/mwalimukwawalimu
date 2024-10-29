@@ -1,0 +1,161 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mwalimukwawalimu/models/answerModel.dart';
+import 'package:mwalimukwawalimu/models/question_model.dart';
+import 'package:mwalimukwawalimu/services/rankingModel.dart';
+
+class FirebaseService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> addQuestion(QuestionModel question, String selectedTopic) async {
+    try {
+      await _firestore.collection('questions').add({
+        'id': question.id,
+        'questionText': question.questionText,
+        'authorId': question.authorId,
+        'topicId': question.topicId,
+        'createdAt': FieldValue.serverTimestamp(), // Use Firestore's timestamp
+      });
+      print('Question added successfully');
+    } catch (e) {
+      print('Error adding the question, because of: $e');
+    }
+  }
+
+  Future<void> likeQuestion(String qnId) async {
+    try {
+      await _firestore.collection('questions').doc(qnId).update({
+        'likes': FieldValue.increment(1),
+      });
+      print('Question liked successfully');
+    } catch (e) {
+      print('Error liking the question, because of: $e');
+    }
+  }
+}
+
+class AnswerService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Add an answer to a question's answer collection
+  Future<DocumentReference> addAnswer(String questionId, Answer answer) async {
+    try {
+      DocumentReference docRef = await _firestore
+          .collection('questions') // Main collection for questions
+          .doc(questionId) // Specific question document
+          .collection('answers') // Sub-collection for answers
+          .add(answer.toFirestore()); // Add the answer data
+      return docRef; // Return the generated document reference
+    } catch (e) {
+      print("Error adding answer: $e");
+      rethrow;
+    }
+  }
+
+  // Fetch answers for a specific question
+  Stream<List<Answer>> getAnswers(String questionId) {
+    return _firestore
+        .collection('questions')
+        .doc(questionId)
+        .collection('answers')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return Answer.fromFirestore(
+            doc.id, doc.data()); // Correct types: String for ID, Map for data
+      }).toList();
+    });
+  }
+
+  // Update the like count for an answer
+  Future<void> updateLikeCount(
+      String questionId, String answerId, int newLikeCount) async {
+    try {
+      await _firestore
+          .collection('questions')
+          .doc(questionId)
+          .collection('answers')
+          .doc(answerId)
+          .update({'likeCount': newLikeCount});
+    } catch (e) {
+      print("Error updating like count: $e");
+    }
+  }
+
+  // Update the dislike count for an answer
+  Future<void> updateDislikeCount(
+      String questionId, String answerId, int newDislikeCount) async {
+    try {
+      await _firestore
+          .collection('questions')
+          .doc(questionId)
+          .collection('answers')
+          .doc(answerId)
+          .update({'dislikeCount': newDislikeCount});
+    } catch (e) {
+      print("Error updating dislike count: $e");
+    }
+  }
+
+  // Add a reply to an answer
+  Future<void> addReply(
+      String questionId, String answerId, String reply) async {
+    try {
+      await _firestore
+          .collection('questions')
+          .doc(questionId)
+          .collection('answers')
+          .doc(answerId)
+          .update({
+        'replies': FieldValue.arrayUnion([reply]), // Append the reply
+      });
+    } catch (e) {
+      print("Error adding reply: $e");
+    }
+  }
+
+  // Get the replies to a specific answer
+  Stream<List<String>> getReplies(String questionId, String answerId) {
+    return FirebaseFirestore.instance
+        .collection('questions')
+        .doc(questionId)
+        .collection('answers')
+        .doc(answerId)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.exists) {
+        return List<String>.from(snapshot.data()?['replies'] ?? []);
+      }
+      return [];
+    });
+  }
+}
+
+class RankingService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Fetch players from Firestore
+  Stream<RankingModel> getRanking() {
+    return _firestore
+        .collection('rankings')
+        .orderBy('score', descending: true) // Order by score
+        .snapshots()
+        .map((snapshot) {
+      return RankingModel.fromFirestore(snapshot);
+    });
+  }
+
+  // Add a player to Firestore
+  Future<void> addPlayer(Player player) async {
+    await _firestore.collection('rankings').add(player.toFirestore());
+  }
+
+  // Update a player's score
+  Future<void> updatePlayerScore(String playerId, int newScore) async {
+    await _firestore
+        .collection('rankings')
+        .doc(playerId)
+        .update({'score': newScore});
+  }
+
+  getLeaderboard() {}
+}
