@@ -1,0 +1,42 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class Gamification {
+  final String uid;
+
+  Gamification({required this.uid});
+
+  // Collection reference
+  final CollectionReference users =
+      FirebaseFirestore.instance.collection('users');
+
+  // Define a map to store score values for actions.
+  final Map<String, int> _actionScores = {
+    'post': 5,
+    'reply': 3,
+    'like': 2,
+    'answer': 3,
+  };
+
+  /// Updates the user's score based on the provided action.
+  Future<void> updateScore(String? action) async {
+    // Validate action and fetch the corresponding score.
+    final int? score = _actionScores[action];
+
+    if (score == null) {
+      print('Invalid action: $action');
+      return;
+    }
+
+    try {
+      // Use Firestore's atomic increment to add the score.
+      await users.doc(uid).update({
+        'score': FieldValue.increment(score),
+      });
+      print("Score updated successfully by $score points.");
+    } on FirebaseException catch (e) {
+      print("Firestore error: ${e.message}");
+    } catch (e) {
+      print("Unexpected error: $e");
+    }
+  }
+}
