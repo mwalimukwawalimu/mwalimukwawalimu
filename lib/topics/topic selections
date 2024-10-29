@@ -1,0 +1,94 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:mwalimukwawalimu/laypoint.dart';
+import 'package:mwalimukwawalimu/models/database.dart';
+import 'package:mwalimukwawalimu/models/topic_model.dart';
+import 'package:mwalimukwawalimu/models/topic_services.dart';
+
+class InterestsSelectionPage extends StatefulWidget {
+  const InterestsSelectionPage({super.key});
+
+  @override
+  _InterestsSelectionPageState createState() => _InterestsSelectionPageState();
+}
+
+class _InterestsSelectionPageState extends State<InterestsSelectionPage> {
+  final TopicService _tps = TopicService();
+  List<TopicModel> allTopics = [];
+  final List<String> selectedTopicIds = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _getTheInterests();
+  }
+
+  void _getTheInterests() async {
+    final topics = await _tps.getTopics();
+    setState(() {
+      allTopics = topics;
+    });
+  }
+
+  void _onInterestSelected(String topicId) {
+    setState(() {
+      if (selectedTopicIds.contains(topicId)) {
+        selectedTopicIds.remove(topicId);
+      } else {
+        selectedTopicIds.add(topicId);
+      }
+    });
+  }
+
+  Future<void> _saveInterests() async {
+    final String uid = FirebaseAuth.instance.currentUser!.uid;
+    DatabaseService dbService = DatabaseService(uid: uid);
+    await dbService.updateUserInterests(selectedTopicIds);
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => MainScreen()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Select Your Interests')),
+      body: ListView(children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Wrap(
+            spacing: 8.0,
+            runSpacing: 8.0,
+            children: allTopics.map((topic) {
+              final bool isSelected = selectedTopicIds.contains(topic.id);
+              return ChoiceChip(
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                        IconData(int.parse(topic.icon),
+                            fontFamily: "MaterialIcons",
+                            matchTextDirection: true),
+                        size: 20,
+                        color: Color(int.parse(topic.color, radix: 16))),
+                    const SizedBox(width: 4),
+                    Text(topic.name,
+                        style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black)),
+                  ],
+                ),
+                selected: isSelected,
+                onSelected: (selected) => _onInterestSelected(topic.id),
+                selectedColor: Colors.purple,
+                backgroundColor: Colors.grey[200],
+              );
+            }).toList(),
+          ),
+        ),
+      ]),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _saveInterests,
+        child: const Icon(Icons.check),
+      ),
+    );
+  }
+}
