@@ -123,4 +123,50 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       ),
     );
   }
+// Widget for the top 3 ranked users
+  Widget _buildTopThree(List<CustomUser> users) {
+    // Ensure we have at least 3 users
+    final topThree = users.length >= 3 ? users.sublist(0, 3) : users;
 
+    return Container(
+      height: 230,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          // 2nd Place
+          _buildRankUser(
+            rank: 2,
+            name: topThree.length > 1 ? topThree[1].fullName : 'N/A',
+            image: topThree.length > 1 ? topThree[1].profilePictureUrl : '',
+            score: topThree.length > 1
+                ? '${topThree[1].score} points'
+                : '0 points',
+            backgroundColor: Colors.purpleAccent,
+          ),
+          // 1st Place (Center and Bigger)
+          _buildRankUser(
+            rank: 1,
+            name: topThree.isNotEmpty ? topThree[0].fullName : 'N/A',
+            image: topThree.isNotEmpty ? topThree[0].profilePictureUrl : '',
+            score: topThree.isNotEmpty
+                ? '${topThree[0].score} points'
+                : '0 points',
+            crown: true,
+            isBig: true,
+            backgroundColor: Colors.amberAccent,
+          ),
+          // 3rd Place
+          _buildRankUser(
+            rank: 3,
+            name: topThree.length > 2 ? topThree[2].fullName : 'N/A',
+            image: topThree.length > 2 ? topThree[2].profilePictureUrl : '',
+            score: topThree.length > 2
+                ? '${topThree[2].score} points'
+                : '0 points',
+            backgroundColor: Colors.lightBlueAccent,
+          ),
+        ],
+      ),
+    );
+  }
