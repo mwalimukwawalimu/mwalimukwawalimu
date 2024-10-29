@@ -1,1 +1,303 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+
+import 'package:image_picker/image_picker.dart';
+import 'package:mwalimukwawalimu/common/constants.dart';
+import 'dart:io';
+
+import 'package:mwalimukwawalimu/models/database.dart';
+import 'package:mwalimukwawalimu/models/question_model.dart';
+import 'package:mwalimukwawalimu/models/user_models.dart';
+import 'package:mwalimukwawalimu/profile/edit_userprofile.dart';
+import 'package:mwalimukwawalimu/authentication/signin.dart';
+
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final DatabaseService _databaseService =
+      DatabaseService(uid: FirebaseAuth.instance.currentUser!.uid);
+  CustomUser? user;
+  Map<String, int> userCounts = {};
+  List<Map<String, dynamic>> recentQuestions = [];
+  File? _selectedImage;
+
+  @override
+  void initState() {
+    super.initState();
+    getUserData();
+  }
+
+  Future<void> getUserData() async {
+    CustomUser? userData = await _databaseService.userFromUid();
+    Map<String, int> counts = await _databaseService
+        .countUserQuestionsAndAnswers(FirebaseAuth.instance.currentUser!.uid);
+    List<Map<String, dynamic>> questions = await _databaseService
+        .getQuestionsByUser(FirebaseAuth.instance.currentUser!.uid);
+    setState(() {
+      user = userData;
+      recentQuestions = questions;
+      userCounts = counts;
+    });
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> logout() async {
+    print("logging out");
+    await AuthService().signOut();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+            onSelected: (String value) {
+              // Handle menu item selection
+              switch (value) {
+                case 'Edit Profile':
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const EditProfileScreen()),
+                  );
+                  break;
+
+                case 'Logout':
+                  logout();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SignInScreen()),
+                  );
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem<String>(
+                  value: 'Edit Profile',
+                  child: Text('Edit Profile'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'Logout',
+                  child: Text('Logout'),
+                ),
+              ];
+            },
+          ),
+        ],
+      ),
+      extendBodyBehindAppBar: true,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                // Background Header Image
+                Container(
+                  height: 200,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.deepPurpleAccent,
+                        Colors.orangeAccent,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+                // Profile Picture with Image Picker
+                Positioned(
+                  top: 140,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: _selectedImage != null
+                          ? FileImage(_selectedImage!)
+                          : const NetworkImage('https://i.pravatar.cc/300')
+                              as ImageProvider,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 60),
+            // Name, Username, and Bio
+            Text(
+              user?.fullName ?? '',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              '@${user?.username}',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Text(
+                user?.bio ?? '',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.black54),
+              ),
+            ),
+            // Location and Joined Date
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.location_on, color: Colors.grey),
+                const SizedBox(width: 5),
+                const Text('Dhaka, Bangladesh',
+                    style: TextStyle(color: Colors.grey)),
+                const SizedBox(width: 15),
+                const Icon(Icons.calendar_today, color: Colors.grey),
+                const SizedBox(width: 5),
+                Text(
+                    'Joined ${user?.joinedDate.toIso8601String().split('T').first}',
+                    style: const TextStyle(color: Colors.grey)),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Stats (Questions, Answered, Upvotes)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildStatItem(
+                      '${userCounts['questionsCount']}', 'Questions'),
+                  _buildStatItem('${userCounts['answersCount']}', 'Answered'),
+                  _buildStatItem(
+                      '${(userCounts['questionsCount'] ?? 0) + (userCounts['answersCount'] ?? 0)}',
+                      'Contributions'),
+                  _buildStatItem(user?.followedTopics.length.toString() ?? '0',
+                      'Followed Topics'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Divider(),
+            // Recent Questions Section
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Recent Questions',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text('View All'),
+                  ),
+                ],
+              ),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics:
+                  const NeverScrollableScrollPhysics(), // Prevent scrolling
+              itemCount: recentQuestions.length,
+              itemBuilder: (context, index) {
+                QuestionModel question =
+                    QuestionModel.fromMap(recentQuestions[index]);
+                return _buildRecentQuestionCard(question);
+              },
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper to create Stats item (Questions, Answered, Upvotes)
+  Widget _buildStatItem(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+  // Helper to create Recent Question Card
+  Widget _buildRecentQuestionCard(QuestionModel question) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              question.questionText,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const CircleAvatar(
+                  radius: 15,
+                  backgroundImage: NetworkImage(
+                    'https://i.pravatar.cc/150', // Replace with actual image
+                  ),
+                ),
+                const SizedBox(width: 30),
+                Text(
+                  '• ${question.createdAt.toIso8601String().split('T').first}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryLight,
+                minimumSize: const Size(100, 40),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: const Text(
+                'See Answer',
+                style: TextStyle(color: kOffWhite),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
