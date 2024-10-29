@@ -1,0 +1,138 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+
+import 'package:motion_tab_bar_v2/motion-tab-bar.dart';
+import 'package:get/get.dart';
+import 'package:mwalimukwawalimu/common/constants.dart';
+import 'package:mwalimukwawalimu/common/tab_controller.dart';
+import 'package:mwalimukwawalimu/models/database.dart';
+import 'package:mwalimukwawalimu/models/user_models.dart';
+import 'package:mwalimukwawalimu/screens/discussions.dart';
+import 'package:mwalimukwawalimu/features/search.dart';
+import 'package:mwalimukwawalimu/home/home.dart';
+import 'package:mwalimukwawalimu/ranking/ranking.dart';
+
+// Custom ClipPath for the curved bottom edge
+class BottomCurvedShape extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 50); // start from bottom left
+    path.quadraticBezierTo(size.width / 2, size.height, size.width,
+        size.height - 50); // create curve
+    path.lineTo(size.width, 0); // draw straight to top right
+    path.close(); // close the path
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) {
+    return false; // no need to reclip
+  }
+}
+
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key});
+
+  @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  final AuthService _auth = AuthService();
+  final List<Widget> pageList = [
+    const HomePage(),
+    const LeaderboardScreen(),
+    const MyDiscussions(),
+    const ProfilePage(),
+  ];
+
+  final _databaseService =
+      DatabaseService(uid: FirebaseAuth.instance.currentUser!.uid);
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getVerificationStatus();
+    postSteps();
+  }
+
+  void postSteps() async {
+    final String? fCMToken = await FirebaseMessaging.instance.getToken();
+    await _databaseService.updateUserFCMToken(fCMToken);
+    print('fCMToken updated successfully.');
+  }
+
+  void getVerificationStatus() async {
+    bool? status = await _auth.isEmailVerified();
+    if (status == false) {
+      Get.snackbar(
+        "Email not verified",
+        "Please verify your email to continue",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.put(TabIndexController());
+
+    return Obx(
+      () => Scaffold(
+        body: Stack(
+          children: [
+            ClipPath(
+              clipper: BottomCurvedShape(),
+              child: Container(
+                color: Colors.white, // Curve color at the bottom
+                height: height * 0.35, // Height of the curve
+              ),
+            ),
+            pageList[controller.tabIndex], // Body content
+          ],
+        ),
+        bottomNavigationBar: Container(
+          height: 70, // Height of the bottom bar
+          decoration: BoxDecoration(
+            color: Colors.white, // Background color for the bar
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(25), // Top left radius
+              topRight: Radius.circular(25), // Top right radius
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1), // Shadow color
+                spreadRadius: 5,
+                blurRadius: 10,
+                offset: const Offset(0, -3), // Vertical shadow
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 15), // Padding for width control
+          child: MotionTabBar(
+            initialSelectedTab: "Home",
+            labels: const ["Home", "Ranking", "Discussions", "Profile"],
+            icons: const [
+              Icons.home,
+              Icons.bar_chart,
+              Icons.chat,
+              Icons.person
+            ],
+            tabIconColor: Colors.grey,
+            tabSelectedColor: const Color.fromARGB(255, 143, 34, 177),
+            textStyle: const TextStyle(color: Colors.black),
+            onTabItemSelected: (int index) {
+              controller.setTabIndex = index;
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
