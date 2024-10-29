@@ -170,3 +170,97 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       ),
     );
   }
+Widget _buildRankUser({
+    required int rank,
+    required String name,
+    required String image,
+    required String score,
+    bool crown = false,
+    bool isBig = false,
+    required Color backgroundColor,
+  }) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (crown)
+          Icon(
+            Icons.emoji_events,
+            color: Colors.yellowAccent[700],
+            size: isBig ? 40 : 28,
+          ),
+        CircleAvatar(
+          radius: isBig ? 45 : 35,
+          backgroundColor: backgroundColor,
+          child: CircleAvatar(
+            radius: isBig ? 42 : 32,
+            backgroundImage: AssetImage(image),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          name,
+          style: TextStyle(
+            fontSize: isBig ? 18 : 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.deepPurple,
+          ),
+        ),
+        Text(
+          score,
+          style: const TextStyle(color: Colors.purple),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: 40,
+          height: 32,
+          decoration: BoxDecoration(
+            color: Colors.purple[800],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            '$rank',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Widget for the scrollable user list (for ranks below 3)
+  Widget _buildUserList(List<CustomUser> users) {
+    final List<CustomUser> otherUsers =
+        users.length > 3 ? users.sublist(3, (users.length - 1)) : [];
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: otherUsers.length,
+      itemBuilder: (context, index) {
+        return Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          color: Colors.deepPurple[700],
+          margin: const EdgeInsets.symmetric(vertical: 10.0),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.deepPurpleAccent,
+              child: Text(
+                '${index + 4}', // Adjust to reflect correct ranking
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            title: Text(
+              otherUsers[index].fullName,
+              style: const TextStyle(color: Colors.white),
+            ),
+            subtitle: Text(
+              '${otherUsers[index].score} points',
+              style: TextStyle(color: Colors.white.withOpacity(0.8)),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
