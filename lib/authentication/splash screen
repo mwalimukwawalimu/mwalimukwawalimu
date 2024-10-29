@@ -64,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         ),
         Positioned(
-          bottom: 220, // Adjust position as needed
+          bottom: 220, 
           left: 0,
           right: 0,
           child: Row(
@@ -88,9 +88,7 @@ class _SplashScreenState extends State<SplashScreen>
                     RotateAnimatedText('KNOWLEDGE'),
                   ],
                   isRepeatingAnimation: true,
-                  // onTap: () {
-                  //   print("Tap Event");
-                  // },
+            
                 ),
               ),
             ],
