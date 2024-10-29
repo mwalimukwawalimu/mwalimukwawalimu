@@ -1,0 +1,158 @@
+import 'package:flutter/material.dart';
+import 'package:mwalimukwawalimu/common/discussion_card.dart';
+
+class MyDiscussions extends StatelessWidget {
+  const MyDiscussions({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Discussions',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        actions: [
+          IconButton(onPressed: () {}, icon: const Icon(Icons.more_vert)),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Trending Discussions Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Trending Discussions',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('View All'),
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 200,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: const [
+                  TrendingDiscussionCard(
+                    title:
+                        'Acquiring Figma was a good decision for Adobe? Will it remain free?',
+                    joined: '3 Joined',
+                    messages: 'Messages',
+                  ),
+                  TrendingDiscussionCard(
+                    title: 'Is AI the future of UX Design?',
+                    joined: '4 Joined',
+                    messages: 'Messages',
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Your Groups Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Your Groups',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text('View All'),
+                ),
+              ],
+            ),
+            Expanded(
+              child: ListView(
+                children: [
+                  groupItem(
+                      'UXD Interns From Google',
+                      'Hey Mercy, if you are free we...',
+                      '6:15 PM',
+                      Colors.green),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget for Trending Discussions
+  Widget trendingDiscussionCard(String title, String joined, String messages) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 5,
+      margin: const EdgeInsets.only(right: 16.0),
+      child: Container(
+        width: 250,
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.people, size: 16, color: Colors.grey),
+                    const SizedBox(width: 5),
+                    Text(joined, style: const TextStyle(color: Colors.grey)),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.message, size: 16, color: Colors.grey),
+                    const SizedBox(width: 5),
+                    Text(messages, style: const TextStyle(color: Colors.grey)),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Widget for Group Item
+  Widget groupItem(String groupName, String message, String time, Color color) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      leading: CircleAvatar(
+        backgroundColor: color,
+        child: Text(groupName[0], style: const TextStyle(color: Colors.white)),
+      ),
+      title:
+          Text(groupName, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(message),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(time),
+          const SizedBox(height: 5),
+          const Icon(Icons.check, size: 16, color: Colors.grey),
+        ],
+      ),
+    );
+  }
+}
+
+void main() {
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: MyDiscussions(),
+  ));
+}
