@@ -1,0 +1,138 @@
+import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
+
+Future<void> handleBackgroundMessage(RemoteMessage message) async {
+  print('Handling a background message: ${message.messageId}');
+  print("Message data: ${message.data}");
+  print("Message body: ${message.notification?.body}");
+  print("Message title: ${message.notification?.title}");
+}
+
+class FirebaseApi {
+  final _firebaseMessaging = FirebaseMessaging.instance;
+  final String _oauthToken =
+      'ya29.c.c0ASRK0GbkRkRfEe3Pv4sVU0C5INHIZ5rG40ia9UXqikGkQAEEjB9rK3xXkT3-cKtyqRul71AMk73b70-BzhB48p6Ukfq4L_TDzrmXExFYZDPE-yLTwXvp53Z21KvuWAA2Fz8FIDUtGJAZ9MtaheI7OdsTQEkhRGC5u2stDnOh_Efud8zpQtz3oezshwoUkQ29-AEzN7sr4XwIWAB_EJBazKDDjKNA-qDIW26gnmYgL9Geo_YNwDVGV9wxqnMOTAS7rYqI0kHcOcg60WyTTBjlR17GGNNd5EcGOxoF7DXR-hojvAxr8n0QrgNbHyIiUpgov0Fq_9WsmCZOuiPdmParzlTcZGXboAmnJMA0DgaZ6w_H8koSu4WGcwwT384Pul1MB1yuwi7iJFdFodpulfYoXVpmOo96xOByVemZjVIkF-tdwS1bF1-9Bef-2gspOdyyOcU0g6az9R7Om_tpjtOpmgUSth24-cvSvJZs7xfF6buccmkr_r353Uigi38WYbeV7Z7MZ-MjXa8MnVcYptq_rcX06ysf8r3gJ9q3FOjm38_uxFB06ibi06ueo2U_2dX1esFu674aXsXaQ-BttcoiIonexsecrYY3b6f76oZOjzFh7d93wRM3acIl1kf2XZ_OQ5olaqq_arnxk7YjBF-kpBaU6R3l1oJyekRgRJ50brvwaqjgefWXYW0bayMRZ6SalO4RqR9496XW46Vh_9FSlORqBmt_erRgYytIMg7Q3ycqZVB4Mj0e69J2fi8YZv7yS5hiyY6-eXxj7yY51Rwl8-uw0X4QBbqr_n7V_W86VMUzpW2la0FQ-RpX_-ege_5pVsXqthefI_l3bS2SwOFV6rOUeM0d7vbuwnm548R6I3d6Jad62XSldgJUkOjwezfFchxMUWswoYVXJ2Zrh_VpW2u-_MJnqqXS4pQI2MUnWSY9zwoganupmvvlxr0q4fYl6ZIn4XrYB1j0f4em0h0X1xB1l6YZ2F8p4bVakfS_df4cVunuf2xbbU';
+
+  final _androidChannel = const AndroidNotificationChannel(
+    'high_importance_channel', // id
+    'High Importance Notifications', // title
+    description:
+        'This channel is used for important notifications.', // description
+    importance: Importance.high,
+  );
+
+  final _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  Future initLocalNotification() async {
+    final iOS = const DarwinInitializationSettings();
+    final android = const AndroidInitializationSettings('@mipmap/ic_launcher');
+    final settings = InitializationSettings(android: android, iOS: iOS);
+
+    await _flutterLocalNotificationsPlugin.initialize(settings,
+        onDidReceiveNotificationResponse:
+            (NotificationResponse notificationResponse) {
+      if (notificationResponse.payload != null) {
+        final message =
+            RemoteMessage.fromMap(jsonDecode(notificationResponse.payload!));
+      }
+    });
+
+    final platform =
+        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()!;
+    await platform.createNotificationChannel(_androidChannel);
+  }
+
+  Future<void> initPushNotifications() async {
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    FirebaseMessaging.instance
+        .getInitialMessage()
+        .then((RemoteMessage? message) {
+      if (message != null) {
+        print('getInitialMessage data: ${message.data}');
+        print('getInitialMessage body: ${message.notification?.body}');
+        print('getInitialMessage title: ${message.notification?.title}');
+      }
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print('onMessageOpenedApp data: ${message.data}');
+      print('onMessageOpenedApp body: ${message.notification?.body}');
+      print('onMessageOpenedApp title: ${message.notification?.title}');
+    });
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final notification = message.notification;
+      if (notification != null) {
+        final title = notification.title;
+        final body = notification.body;
+        _flutterLocalNotificationsPlugin.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: AndroidNotificationDetails(
+              _androidChannel.id,
+              _androidChannel.name,
+              channelDescription: _androidChannel.description,
+              icon: '@mipmap/ic_launcher',
+              importance: _androidChannel.importance,
+            ),
+          ),
+          payload: jsonEncode(message.toMap()),
+        );
+      }
+    });
+  }
+
+  Future<void> initNotifications() async {
+    await _firebaseMessaging.requestPermission();
+    FirebaseMessaging.onBackgroundMessage(handleBackgroundMessage);
+    initPushNotifications();
+    initLocalNotification();
+  }
+
+  Future<void> sendNotification({
+    required String targetFCMToken,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+  }) async {
+    try {
+      print('Sending notification to $targetFCMToken');
+      final response = await http.post(
+        Uri.parse(
+            'https://fcm.googleapis.com/v1/projects/mwalimu-ff447/messages:send'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_oauthToken',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'message': {
+            'token': targetFCMToken,
+            'notification': {
+              'title': title,
+              'body': body,
+            },
+            'data': data ?? {},
+          },
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Notification sent successfully');
+      } else {
+        print('Failed to send notification: ${response.body}');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+    }
+  }
+}
