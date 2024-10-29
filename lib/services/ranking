@@ -1,0 +1,56 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class Player {
+  final String id; // Document ID from Firestore
+  final String name;
+  final String flag;
+  final int score;
+  final String avatarPath;
+
+  Player({
+    required this.id,
+    required this.name,
+    required this.flag,
+    required this.score,
+    required this.avatarPath,
+  });
+
+  // Convert Player to Firestore-compatible map
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'flag': flag,
+      'score': score,
+      'avatarPath': avatarPath,
+    };
+  }
+
+  // Create a Player object from Firestore data
+  factory Player.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
+    return Player(
+      id: doc.id,
+      name: data['name'],
+      flag: data['flag'],
+      score: data['score'],
+      avatarPath: data['avatarPath'],
+    );
+  }
+}
+
+class RankingModel {
+  final List<Player> players;
+
+  RankingModel({required this.players});
+
+  // Convert a list of Players to Firestore
+  List<Map<String, dynamic>> toFirestore() {
+    return players.map((player) => player.toFirestore()).toList();
+  }
+
+  // Create a RankingModel from Firestore data
+  factory RankingModel.fromFirestore(QuerySnapshot<Map<String, dynamic>> snapshot) {
+    final players = snapshot.docs.map((doc) => Player.fromFirestore(doc)).toList();
+    return RankingModel(players: players);
+  }
+}
