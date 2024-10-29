@@ -1,1 +1,260 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'dart:async';
+
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({super.key});
+
+  @override
+  _SearchScreenState createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  Timer? _debounce;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = value;
+      });
+    });
+  }
+
+  Stream<List<Map<String, String>>> _searchResultsStream(
+      String searchQuery) async* {
+    if (searchQuery.isEmpty) {
+      yield [];
+      return;
+    }
+
+    try {
+      // Get questions based on the search query
+      final questionsSnapshot = await FirebaseFirestore.instance
+          .collection('questions')
+          .where('questionText', isGreaterThanOrEqualTo: searchQuery)
+          .where('questionText', isLessThanOrEqualTo: '$searchQuery\uf8ff')
+          .get();
+
+      List<Map<String, String>> results = [];
+
+      for (var doc in questionsSnapshot.docs) {
+        String topic = await getTopicById(doc['topicId']) ?? "";
+        String username = await getUsernameById(doc['authorId']) ?? "";
+        results.add({
+          'type': 'question',
+          'content': doc['questionText'],
+          'author': username,
+          'topic': topic,
+        });
+      }
+
+      yield results;
+    } catch (e) {
+      print('Error fetching search results: $e');
+      yield [];
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Search Topics & Questions'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search for questions, topics, or names...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                prefixIcon: const Icon(Icons.search),
+              ),
+              onChanged: _onSearchChanged,
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: StreamBuilder<List<Map<String, String>>>(
+                stream: _searchResultsStream(_searchQuery),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No results found!',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    );
+                  }
+
+                  var filteredResults = snapshot.data!;
+
+                  return ListView.builder(
+                    itemCount: filteredResults.length,
+                    itemBuilder: (context, index) {
+                      var item = filteredResults[index];
+                      return _buildSearchResultItem(item);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchResultItem(Map<String, String> item) {
+    IconData iconData;
+    String type = item['type'] ?? '';
+
+    switch (type) {
+      case 'question':
+        iconData = Icons.help_outline;
+        break;
+      case 'user':
+        iconData = Icons.person_outline;
+        break;
+      case 'topic':
+        iconData = Icons.topic;
+        break;
+      default:
+        iconData = Icons.help_outline;
+    }
+
+    return ListTile(
+      leading: Icon(iconData, color: Colors.deepPurple),
+      title: Text(item['content']!),
+      subtitle: Text(type == 'user'
+          ? 'User: ${item['content']}'
+          : 'Author: ${item['author']}'),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: () {
+        if (type == 'question') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => DetailsScreen(
+                question: item['content']!,
+                author: item['author']!,
+              ),
+            ),
+          );
+        } else if (type == 'user') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProfilePage(),
+            ),
+          );
+        } else if (type == 'topic') {
+          // Handle topic tap
+        }
+      },
+    );
+  }
+
+  Future<String?> getUsernameById(String userId) async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      return userDoc.exists ? userDoc['username'] as String? : null;
+    } catch (e) {
+      print('Error fetching username: $e');
+      return null;
+    }
+  }
+
+  Future<String?> getTopicById(String topicId) async {
+    try {
+      DocumentSnapshot topicDoc = await FirebaseFirestore.instance
+          .collection('topics')
+          .doc(topicId)
+          .get();
+
+      return topicDoc.exists ? topicDoc['name'] as String? : null;
+    } catch (e) {
+      print('Error fetching name: $e');
+      return null;
+    }
+  }
+}
+
+// A mock DetailsScreen for displaying question details
+class DetailsScreen extends StatelessWidget {
+  final String question;
+  final String author;
+
+  const DetailsScreen(
+      {super.key, required this.question, required this.author});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Question Details'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              question,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Asked by: $author',
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Answer section will go here...',
+              style: TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// A mock ProfilePage for navigating to the user's profile
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('User Profile'),
+      ),
+      body: const Center(
+        child: Text('Profile details go here...'),
+      ),
+    );
+  }
+}
 
